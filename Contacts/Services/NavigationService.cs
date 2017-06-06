@@ -12,6 +12,9 @@ namespace Contacts.Services
 				case "NewContactPage":
 					await App.Current.MainPage.Navigation.PushAsync(new NewContactPage());
 					break;
+				case "EditContactPage":
+					await App.Current.MainPage.Navigation.PushAsync(new EditContactPage());
+					break;
 				default:
 					break;
 			}

@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Windows.Input;
 using Contacts.Services;
 using GalaSoft.MvvmLight.Command;
@@ -23,19 +23,41 @@ namespace Contacts.ViewModels
             get;
             set;
         }
+
+        public EditContactViewModel EditContact
+        {
+            get;
+            set;
+        }
         #endregion
 
         #region Constructors
         public MainViewModel()
         {
+            instance = this;
+
             navigationService = new NavigationService();
 
             Contacts = new ContactsViewModel();
         }
-        #endregion
+		#endregion
 
-        #region Commands
-        public ICommand AddContactCommand
+		#region Singleton
+		static MainViewModel instance;
+
+		public static MainViewModel GetInstance()
+		{
+			if (instance == null)
+			{
+				instance = new MainViewModel();
+			}
+
+			return instance;
+		}
+		#endregion
+
+		#region Commands
+		public ICommand AddContactCommand
         {
             get { return new RelayCommand(AddContact);  }
         }

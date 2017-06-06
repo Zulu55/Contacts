@@ -8,15 +8,17 @@ using Plugin.Media;
 using Plugin.Media.Abstractions;
 using Xamarin.Forms;
 
+
 namespace Contacts.ViewModels
 {
-    public class NewContactViewModel : Contact, INotifyPropertyChanged
-	{
+    public class EditContactViewModel : Contact, INotifyPropertyChanged
+    {
 		#region Events
 		public event PropertyChangedEventHandler PropertyChanged;
 		#endregion
 
 		#region Attributes
+		private Contact contact;
 		private DialogService dialogService;
 		private ApiService apiService;
 		private NavigationService navigationService;
@@ -75,33 +77,42 @@ namespace Contacts.ViewModels
 			}
 		}
 		#endregion
-
-		#region Constructors
-		public NewContactViewModel()
+		
+        #region Constructor
+        public EditContactViewModel(Contact contact)
         {
+            this.contact = contact;
+
+            ContactId = contact.ContactId;
+            FirstName = contact.FirstName;
+            LastName = contact.LastName;
+            Image = contact.Image;
+            EmailAddress = contact.EmailAddress;
+            PhoneNumber = contact.PhoneNumber;
+			
             apiService = new ApiService();
-            dialogService = new DialogService();
-            navigationService = new NavigationService();
+			dialogService = new DialogService();
+			navigationService = new NavigationService();
 
-            IsEnabled = true;
-        }
+			IsEnabled = true;
+		}
 		#endregion
-
-		#region Commands
-		public ICommand TakePictureCommand 
-        { 
-            get { return new RelayCommand(TakePicture); } 
-        }
+		
+        #region Commands
+		public ICommand TakePictureCommand
+		{
+			get { return new RelayCommand(TakePicture); }
+		}
 
 		private async void TakePicture()
 		{
 			await CrossMedia.Current.Initialize();
 
-			if (!CrossMedia.Current.IsCameraAvailable || 
-                !CrossMedia.Current.IsTakePhotoSupported)
+			if (!CrossMedia.Current.IsCameraAvailable ||
+				!CrossMedia.Current.IsTakePhotoSupported)
 			{
 				await dialogService.ShowMessage("No Camera", ":( No camera available.");
-                return;
+				return;
 			}
 
 			file = await CrossMedia.Current.TakePhotoAsync(new StoreCameraMediaOptions
@@ -125,12 +136,12 @@ namespace Contacts.ViewModels
 			IsRunning = false;
 		}
 
-		public ICommand NewContactCommand 
-        { 
-            get { return new RelayCommand(NewContact); } 
-        }
+		public ICommand SaveContactCommand
+		{
+			get { return new RelayCommand(SaveContact); }
+		}
 
-		private async void NewContact()
+		private async void SaveContact()
 		{
 			if (string.IsNullOrEmpty(FirstName))
 			{
@@ -144,15 +155,16 @@ namespace Contacts.ViewModels
 				return;
 			}
 
-            byte[] imageArray = null;
-            if (file != null)
-            {
-                imageArray = FilesHelper.ReadFully(file.GetStream());
-                file.Dispose();
-            }
-
-			var contact = new Contact
+			byte[] imageArray = null;
+			if (file != null)
 			{
+				imageArray = FilesHelper.ReadFully(file.GetStream());
+				file.Dispose();
+			}
+
+			var newContact = new Contact
+			{
+                ContactId = ContactId,
 				EmailAddress = EmailAddress,
 				FirstName = FirstName,
 				ImageArray = imageArray,
@@ -162,11 +174,45 @@ namespace Contacts.ViewModels
 
 			IsRunning = true;
 			IsEnabled = false;
-			var response = await apiService.Post(
+			var response = await apiService.Put(
+				"http://contactsxamarintata.azurewebsites.net",
+				"/api",
+				"/Contacts",
+				newContact);
+			IsRunning = false;
+			IsEnabled = true;
+
+			if (!response.IsSuccess)
+			{
+				await dialogService.ShowMessage("Error", response.Message);
+				return;
+			}
+
+			await navigationService.Back();
+		}
+
+        public ICommand DeleteContactCommand 
+        { 
+            get { return new RelayCommand(DeleteContact); } 
+        }
+
+		private async void DeleteContact()
+		{
+			var answer = await dialogService.ShowConfirm(
+                "Confirm", 
+                "Are you sure to delete this record?");
+			if (!answer)
+			{
+				return;
+			}
+
+			IsRunning = true;
+			IsEnabled = false;
+			var response = await apiService.Delete(
                 "http://contactsxamarintata.azurewebsites.net", 
                 "/api", 
                 "/Contacts", 
-                contact);
+                this);
 			IsRunning = false;
 			IsEnabled = true;
 
