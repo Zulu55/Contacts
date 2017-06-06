@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
@@ -7,6 +6,7 @@ using System.Windows.Input;
 using Contacts.Models;
 using Contacts.Services;
 using GalaSoft.MvvmLight.Command;
+//using Plugin.Connectivity;
 
 namespace Contacts.ViewModels
 {
@@ -45,11 +45,26 @@ namespace Contacts.ViewModels
 		#region Constructors
 		public ContactsViewModel()
         {
+            instance = this;
+            
 			apiService = new ApiService();
 			dialogService = new DialogService();
 
 			MyContacts = new ObservableCollection<ContactItemViewModel>();
-			LoadContacts();
+		}
+		#endregion
+
+		#region Singleton
+		static ContactsViewModel instance;
+
+		public static ContactsViewModel GetInstance()
+		{
+			if (instance == null)
+			{
+				instance = new ContactsViewModel();
+			}
+
+			return instance;
 		}
 		#endregion
 
@@ -69,12 +84,10 @@ namespace Contacts.ViewModels
 			//	return;
 			//}
 			
-            IsRefreshing = true;
 			var response = await apiService.Get<Contact>(
                 "http://contactsxamarintata.azurewebsites.net", 
                 "/api", 
                 "/Contacts");
-            IsRefreshing = false;
 
 			if (!response.IsSuccess)
 			{
@@ -109,7 +122,9 @@ namespace Contacts.ViewModels
 
 		public void Refresh()
 		{
+            IsRefreshing = true;
             LoadContacts();
+            IsRefreshing = false;
 		}
 		#endregion
 	}

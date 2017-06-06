@@ -14,6 +14,8 @@
 
 		public string PhoneNumber { get; set; }
 
+		public byte[] ImageArray { get; set; }
+
 		public string FullName 
         { 
             get 
