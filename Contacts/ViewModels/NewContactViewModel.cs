@@ -1,6 +1,10 @@
 ﻿using System.ComponentModel;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using Contacts.Helpers;
+using Contacts.Interfeces;
 using Contacts.Models;
 using Contacts.Services;
 using GalaSoft.MvvmLight.Command;
@@ -11,73 +15,76 @@ using Xamarin.Forms;
 namespace Contacts.ViewModels
 {
     public class NewContactViewModel : Contact, INotifyPropertyChanged
-	{
-		#region Events
-		public event PropertyChangedEventHandler PropertyChanged;
-		#endregion
+    {
+        #region Events
+        public event PropertyChangedEventHandler PropertyChanged;
+        #endregion
 
-		#region Attributes
-		private DialogService dialogService;
-		private ApiService apiService;
-		private NavigationService navigationService;
-		private bool isRunning;
-		private bool isEnabled;
-		private ImageSource imageSource;
-		private MediaFile file;
+        #region Attributes
+        private DialogService dialogService;
+        private ApiService apiService;
+        private NavigationService navigationService;
+        private bool isRunning;
+        private bool isEnabled;
+        private ImageSource imageSource;
+        private Stream stream;
+        private MediaFile file;
+		private bool wasPictureTaken;
+		private bool wasPicturePicked;
 		#endregion
 
 		#region Properties
 		public bool IsRunning
-		{
-			set
-			{
-				if (isRunning != value)
-				{
-					isRunning = value;
-					PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("IsRunning"));
-				}
-			}
-			get
-			{
-				return isRunning;
-			}
-		}
+        {
+            set
+            {
+                if (isRunning != value)
+                {
+                    isRunning = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("IsRunning"));
+                }
+            }
+            get
+            {
+                return isRunning;
+            }
+        }
 
-		public bool IsEnabled
-		{
-			set
-			{
-				if (isEnabled != value)
-				{
-					isEnabled = value;
-					PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("IsEnabled"));
-				}
-			}
-			get
-			{
-				return isEnabled;
-			}
-		}
+        public bool IsEnabled
+        {
+            set
+            {
+                if (isEnabled != value)
+                {
+                    isEnabled = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("IsEnabled"));
+                }
+            }
+            get
+            {
+                return isEnabled;
+            }
+        }
 
-		public ImageSource ImageSource
-		{
-			set
-			{
-				if (imageSource != value)
-				{
-					imageSource = value;
-					PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("ImageSource"));
-				}
-			}
-			get
-			{
-				return imageSource;
-			}
-		}
-		#endregion
+        public ImageSource ImageSource
+        {
+            set
+            {
+                if (imageSource != value)
+                {
+                    imageSource = value;
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("ImageSource"));
+                }
+            }
+            get
+            {
+                return imageSource;
+            }
+        }
+        #endregion
 
-		#region Constructors
-		public NewContactViewModel()
+        #region Constructors
+        public NewContactViewModel()
         {
             apiService = new ApiService();
             dialogService = new DialogService();
@@ -85,23 +92,42 @@ namespace Contacts.ViewModels
 
             IsEnabled = true;
         }
-		#endregion
+        #endregion
 
-		#region Commands
-		public ICommand TakePictureCommand 
-        { 
-            get { return new RelayCommand(TakePicture); } 
+        #region Commands
+        public ICommand PickPictureCommand
+        {
+            get { return new RelayCommand(PickPicture); }
+        }
+
+        private async void PickPicture()
+        {
+            var myStream = await DependencyService.Get<IPicturePicker>().GetImageStreamAsync();
+
+            if (myStream != null)
+            {
+                ImageSource = ImageSource.FromStream(() => myStream);
+                stream = myStream;
+
+                wasPicturePicked = true;
+                wasPictureTaken = false;
+            }
+        }
+
+        public ICommand TakePictureCommand
+        {
+            get { return new RelayCommand(TakePicture); }
         }
 
 		private async void TakePicture()
 		{
 			await CrossMedia.Current.Initialize();
 
-			if (!CrossMedia.Current.IsCameraAvailable || 
-                !CrossMedia.Current.IsTakePhotoSupported)
+			if (!CrossMedia.Current.IsCameraAvailable ||
+				!CrossMedia.Current.IsTakePhotoSupported)
 			{
 				await dialogService.ShowMessage("No Camera", ":( No camera available.");
-                return;
+				return;
 			}
 
 			file = await CrossMedia.Current.TakePhotoAsync(new StoreCameraMediaOptions
@@ -120,64 +146,73 @@ namespace Contacts.ViewModels
 					var stream = file.GetStream();
 					return stream;
 				});
+
+                wasPicturePicked = false;
+				wasPictureTaken = true;
 			}
 
 			IsRunning = false;
 		}
 
-		public ICommand NewContactCommand 
-        { 
-            get { return new RelayCommand(NewContact); } 
+		public ICommand NewContactCommand
+        {
+            get { return new RelayCommand(NewContact); }
         }
 
-		private async void NewContact()
-		{
-			if (string.IsNullOrEmpty(FirstName))
-			{
-				await dialogService.ShowMessage("Error", "You must enter a first name.");
-				return;
-			}
-
-			if (string.IsNullOrEmpty(LastName))
-			{
-				await dialogService.ShowMessage("Error", "You must enter a last name.");
-				return;
-			}
-
-            byte[] imageArray = null;
-            if (file != null)
+        private async void NewContact()
+        {
+            if (string.IsNullOrEmpty(FirstName))
             {
-                imageArray = FilesHelper.ReadFully(file.GetStream());
-                file.Dispose();
+                await dialogService.ShowMessage("Error", "You must enter a first name.");
+                return;
             }
 
-			var contact = new Contact
-			{
-				EmailAddress = EmailAddress,
-				FirstName = FirstName,
-				ImageArray = imageArray,
-				LastName = LastName,
-				PhoneNumber = PhoneNumber,
-			};
+            if (string.IsNullOrEmpty(LastName))
+            {
+                await dialogService.ShowMessage("Error", "You must enter a last name.");
+                return;
+            }
 
-			IsRunning = true;
-			IsEnabled = false;
-			var response = await apiService.Post(
-                "http://contactsxamarintata.azurewebsites.net", 
-                "/api", 
-                "/Contacts", 
-                contact);
-			IsRunning = false;
-			IsEnabled = true;
+            byte[] imageArray = null;
 
-			if (!response.IsSuccess)
+			if (wasPictureTaken && file != null)
 			{
-				await dialogService.ShowMessage("Error", response.Message);
-				return;
+				imageArray = FilesHelper.ReadFully(file.GetStream());
+				file.Dispose();
 			}
 
-			await navigationService.Back();
-		}
-		#endregion
-	}
+            if (wasPicturePicked && stream != null)
+			{
+				imageArray = FilesHelper.ReadFully(stream);
+			}
+
+			var contact = new Contact
+            {
+                EmailAddress = EmailAddress,
+                FirstName = FirstName,
+                ImageArray = imageArray,
+                LastName = LastName,
+                PhoneNumber = PhoneNumber,
+            };
+
+            IsRunning = true;
+            IsEnabled = false;
+            var response = await apiService.Post(
+                "http://contactsxamarintata.azurewebsites.net",
+                "/api",
+                "/Contacts",
+                contact);
+            IsRunning = false;
+            IsEnabled = true;
+
+            if (!response.IsSuccess)
+            {
+                await dialogService.ShowMessage("Error", response.Message);
+                return;
+            }
+
+            await navigationService.Back();
+        }
+        #endregion
+    }
 }

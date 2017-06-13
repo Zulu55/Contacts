@@ -91,16 +91,38 @@
                         </Entry>
                     </Grid>
                 </Grid>
-                <controls:CircleImage 
-                    Source="{Binding ImageSource}" 
-                    Aspect="AspectFill">
-                </controls:CircleImage>
+                <StackLayout
+                    Orientation="Horizontal">
+                    <Image
+                        VerticalOptions="Start"
+                        HorizontalOptions="Start"
+                        Source="ic_add_a_photo.png">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding TakePictureCommand}"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+                    <controls:CircleImage 
+                        HorizontalOptions="CenterAndExpand"
+                        WidthRequest="250"
+                        HeightRequest="250"
+                        Source="{Binding ImageSource}" 
+                        Aspect="AspectFill">
+                    </controls:CircleImage>
+                    <Image
+                        VerticalOptions="Start"
+                        HorizontalOptions="End"
+                        Source="ic_insert_photo.png">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding PickPictureCommand}"/>
+                        </Image.GestureRecognizers>
+                    </Image>
+                </StackLayout>
                 <ActivityIndicator
                     IsRunning="{Binding IsRunning}">
                 </ActivityIndicator>
                 <StackLayout
                     Orientation="Horizontal">
-                    <Button
+                    <!--<Button
                         HorizontalOptions="FillAndExpand"
                         Command="{Binding TakePictureCommand}"
                         IsEnabled="{Binding IsEnabled, Mode=TwoWay}"
@@ -109,7 +131,7 @@
                         BorderRadius="20"
                         TextColor="White"
                         Text="Take Picture">
-                    </Button>
+                    </Button>-->
                     <Button
                         HorizontalOptions="FillAndExpand"
                         Command="{Binding NewContactCommand}"

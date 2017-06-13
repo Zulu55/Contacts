@@ -114,6 +114,7 @@
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="MainApplication.cs" />
+    <Compile Include="PicturePickerImplementation.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -137,6 +138,8 @@
     <AndroidResource Include="Resources\drawable\ic_action_add_circle.png" />
     <AndroidResource Include="Resources\drawable-hdpi\ic_action_add_circle.png" />
     <AndroidResource Include="Resources\drawable-xxhdpi\ic_action_add_circle.png" />
+    <AndroidResource Include="Resources\drawable\ic_add_a_photo.png" />
+    <AndroidResource Include="Resources\drawable\ic_insert_photo.png" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
   <Import Project="..\packages\Xamarin.Android.Support.Vector.Drawable.23.3.0\build\Xamarin.Android.Support.Vector.Drawable.targets" Condition="Exists('..\packages\Xamarin.Android.Support.Vector.Drawable.23.3.0\build\Xamarin.Android.Support.Vector.Drawable.targets')" />
