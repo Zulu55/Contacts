@@ -97,8 +97,43 @@ namespace Contacts.ViewModels
 			IsEnabled = true;
 		}
 		#endregion
-		
-        #region Commands
+
+		#region Commands
+		public ICommand PickPictureCommand
+		{
+			get { return new RelayCommand(PickPicture); }
+		}
+
+		private async void PickPicture()
+		{
+			await CrossMedia.Current.Initialize();
+
+			if (!CrossMedia.Current.IsPickPhotoSupported)
+			{
+				await dialogService.ShowMessage(
+					"Photo Not Supported",
+					":( No available to pick photos from gallery.");
+				return;
+			}
+
+			file = await CrossMedia.Current.PickPhotoAsync(new PickMediaOptions
+			{
+				PhotoSize = PhotoSize.Small,
+			});
+
+			IsRunning = true;
+
+			if (file != null)
+			{
+				ImageSource = ImageSource.FromStream(() =>
+				{
+					var stream = file.GetStream();
+					return stream;
+				});
+			}
+
+			IsRunning = false;
+		}
 		public ICommand TakePictureCommand
 		{
 			get { return new RelayCommand(TakePicture); }
@@ -111,7 +146,9 @@ namespace Contacts.ViewModels
 			if (!CrossMedia.Current.IsCameraAvailable ||
 				!CrossMedia.Current.IsTakePhotoSupported)
 			{
-				await dialogService.ShowMessage("No Camera", ":( No camera available.");
+				await dialogService.ShowMessage(
+                    "No Camera", 
+                    ":( No camera available.");
 				return;
 			}
 

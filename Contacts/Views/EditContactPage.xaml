@@ -43,38 +43,44 @@
                 </Entry>
                 <StackLayout
                     Orientation="Horizontal">
+                    <Image
+                        VerticalOptions="Start"
+                        HorizontalOptions="Start"
+                        Source="ic_add_a_photo.png">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding TakePictureCommand}"/>
+                        </Image.GestureRecognizers>
+                    </Image>
                     <controls:CircleImage 
                         Source="{Binding ImageFullPath}" 
                         VerticalOptions="Center"
                         HorizontalOptions="Center"
                         Aspect="AspectFill"
-                        WidthRequest="180"
-                        HeightRequest="180">
+                        WidthRequest="120"
+                        HeightRequest="120">
                     </controls:CircleImage>
                     <controls:CircleImage 
                         Source="{Binding ImageSource}" 
                         VerticalOptions="Center"
                         HorizontalOptions="Center"
                         Aspect="AspectFill"
-                        WidthRequest="180"
-                        HeightRequest="180">
+                        WidthRequest="120"
+                        HeightRequest="120">
                     </controls:CircleImage>
+                    <Image
+                        VerticalOptions="Start"
+                        HorizontalOptions="End"
+                        Source="ic_insert_photo.png">
+                        <Image.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding PickPictureCommand}"/>
+                        </Image.GestureRecognizers>
+                    </Image>
                 </StackLayout>
                 <ActivityIndicator
                     IsRunning="{Binding IsRunning}">
                 </ActivityIndicator>
                 <StackLayout
                     Orientation="Horizontal">
-                    <Button
-                        HeightRequest="40"
-                        BorderRadius="20"
-                        HorizontalOptions="FillAndExpand"
-                        Command="{Binding TakePictureCommand}"
-                        IsEnabled="{Binding IsEnabled, Mode=TwoWay}"
-                        BackgroundColor="Orange"
-                        TextColor="White"
-                        Text="Take Picture">
-                    </Button>
                     <Button
                         HeightRequest="40"
                         BorderRadius="20"

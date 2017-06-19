@@ -1,10 +1,6 @@
 ﻿using System.ComponentModel;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Input;
 using Contacts.Helpers;
-using Contacts.Interfeces;
 using Contacts.Models;
 using Contacts.Services;
 using GalaSoft.MvvmLight.Command;
@@ -27,10 +23,7 @@ namespace Contacts.ViewModels
         private bool isRunning;
         private bool isEnabled;
         private ImageSource imageSource;
-        private Stream stream;
         private MediaFile file;
-		private bool wasPictureTaken;
-		private bool wasPicturePicked;
 		#endregion
 
 		#region Properties
@@ -102,17 +95,34 @@ namespace Contacts.ViewModels
 
         private async void PickPicture()
         {
-            var myStream = await DependencyService.Get<IPicturePicker>().GetImageStreamAsync();
+			await CrossMedia.Current.Initialize();
 
-            if (myStream != null)
-            {
-                ImageSource = ImageSource.FromStream(() => myStream);
-                stream = myStream;
+			if (!CrossMedia.Current.IsPickPhotoSupported)
+			{
+				await dialogService.ShowMessage(
+                    "Photo Not Supported", 
+                    ":( No available to pick photos from gallery.");
+				return;
+			}
 
-                wasPicturePicked = true;
-                wasPictureTaken = false;
-            }
-        }
+			file = await CrossMedia.Current.PickPhotoAsync(new PickMediaOptions 
+			{
+				PhotoSize = PhotoSize.Small,
+			});
+
+			IsRunning = true;
+
+			if (file != null)
+			{
+				ImageSource = ImageSource.FromStream(() =>
+				{
+					var stream = file.GetStream();
+					return stream;
+				});
+			}
+
+			IsRunning = false;
+		}
 
         public ICommand TakePictureCommand
         {
@@ -147,8 +157,6 @@ namespace Contacts.ViewModels
 					return stream;
 				});
 
-                wasPicturePicked = false;
-				wasPictureTaken = true;
 			}
 
 			IsRunning = false;
@@ -175,16 +183,11 @@ namespace Contacts.ViewModels
 
             byte[] imageArray = null;
 
-			if (wasPictureTaken && file != null)
-			{
-				imageArray = FilesHelper.ReadFully(file.GetStream());
-				file.Dispose();
-			}
-
-            if (wasPicturePicked && stream != null)
-			{
-				imageArray = FilesHelper.ReadFully(stream);
-			}
+            if (file != null)
+            {
+                imageArray = FilesHelper.ReadFully(file.GetStream());
+                file.Dispose();
+            }
 
 			var contact = new Contact
             {
